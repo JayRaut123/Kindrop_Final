@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Donation Tracker Live Map</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+  <style>
+    :root {
+      --primary: #FF8c00;
+      --secondary: #FFB800;
+      --bg: #fff8f0;
+      --text: #333333;
+      --panel-bg: rgba(255, 255, 255, 0.85);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #FFE0B2 0%, #FFF3E0 100%);
+      color: var(--text);
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      padding: 20px 30px;
+      box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+      z-index: 10;
+      position: relative;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Set the size of the div element that contains the map */
+    #map {
+      flex: 1;
+      height: 100%;
+      width: 100%;
+    }
+
+    .sidebar {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 350px;
+      max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 5;
+      pointer-events: none;
+      /* Let clicks pass through empty spaces between panels */
+    }
+
+    .panel {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 140, 0, 0.3);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-icon {
+      display: none;
+      margin-left: auto;
+      font-size: 14px;
+      transition: transform 0.3s ease;
+    }
+
+    .collapsible .panel-content {
+      transition: max-height 0.4s ease-in-out;
+    }
+
+    .panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(255, 140, 0, 0.2);
+    }
+
+    .panel h3 {
+      margin-top: 0;
+      color: var(--primary);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 2px solid rgba(255, 184, 0, 0.3);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .status-item {
+      margin-bottom: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .status-item strong {
+      color: #555;
+      display: block;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .status-value {
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(255, 140, 0, 0.1);
+      color: var(--primary);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .highlight {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .products-list {
+      overflow-y: auto;
+      max-height: 250px;
+      padding-right: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .products-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .products-list::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 4px;
+    }
+
+    .products-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 140, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid var(--secondary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .product-card:hover {
+      background: #fafafa;
+      border-left-color: var(--primary);
+    }
+
+    .product-title {
+      font-weight: 700;
+      color: #444;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .truck-badge {
+      background: #E8F5E9;
+      color: #4CAF50;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .truck-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: #4CAF50;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: 0.2;
+      }
+    }
+
+    .product-detail {
+      color: #666;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    .driver-info-box {
+      margin-top: 10px;
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 10px;
+      display: none;
+      /* Shown when driver is active */
+    }
+
+    .driver-info-box h4 {
+      margin: 0 0 5px 0;
+      color: #333;
+      font-size: 13px;
+    }
+
+    .tracker-panel {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 25px 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+      width: 400px;
+      max-width: 90vw;
+      border-top: 4px solid var(--primary);
+      display: none; /* Hidden until driver assigned */
+      animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes slideUp {
+      from { bottom: -100px; opacity: 0; }
+      to { bottom: 40px; opacity: 1; }
+    }
+    
+    /* Radar Waiting Overlay */
+    #waiting-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 248, 240, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    .radar {
+      position: relative;
+      width: 100px; height: 100px;
+      border: 3px solid rgba(255, 140, 0, 0.5);
+      border-radius: 50%;
+      margin-bottom: 20px;
+    }
+    .radar::after {
+      content: '';
+      position: absolute; width: 100%; height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 20px 5px rgba(255, 140, 0, 0.4);
+      animation: radarPulse 2s infinite ease-out;
+    }
+    .radar-dot {
+      position: absolute; top:45px; left:45px; width:10px; height:10px; background:#FF8c00; border-radius:50%;
+    }
+    @keyframes radarPulse {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+    #waiting-overlay h2 { color: var(--primary); margin: 0; font-size: 24px; text-align: center; }
+    #waiting-overlay p { color: #666; font-size: 15px; margin-top: 5px; text-align: center; }
+
+    /* ===================== SUCCESS OVERLAY ===================== */
+    #success-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    #success-overlay.show {
+      display: flex;
+    }
+    #success-overlay.visible {
+      opacity: 1;
+    }
+    .success-circle {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: #4CAF50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.5);
+      animation: successPulse 1.5s ease-out 0.3s forwards;
+    }
+    @keyframes successPulse {
+      0%   { transform: scale(0.5); box-shadow: 0 0 0 0 rgba(76,175,80,0.6); }
+      50%  { transform: scale(1.08); box-shadow: 0 0 0 30px rgba(76,175,80,0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 50px rgba(76,175,80,0); }
+    }
+    .checkmark-svg {
+      width: 90px;
+      height: 90px;
+    }
+    .checkmark-path {
+      stroke: white;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawCheck 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+    }
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
+    }
+    .success-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #2e7d32;
+      margin: 0;
+      animation: fadeSlideUp 0.5s ease 0.8s both;
+    }
+    .success-subtitle {
+      font-size: 16px;
+      color: #555;
+      margin: 0;
+      text-align: center;
+      max-width: 380px;
+      line-height: 1.5;
+      animation: fadeSlideUp 0.5s ease 1s both;
+    }
+    .success-badge {
+      background: #e8f5e9;
+      border: 2px solid #4CAF50;
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #2e7d32;
+      animation: fadeSlideUp 0.5s ease 1.2s both;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Confetti dots */
+    .confetti-container {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .confetti-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    .tracker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 140, 0, 0.2);
+    }
+
+    .tracker-header h2 {
+      margin: 0;
+      color: var(--primary);
+      font-size: 24px;
+    }
+
+    .live-badge {
+      background: #FFF3E0;
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .live-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    .driver-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .driver-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #f0f0f0;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .driver-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .driver-details h3 {
+      margin: 0 0 5px 0;
+      color: #333;
+      font-size: 18px;
+    }
+
+    .driver-details p {
+      margin: 0;
+      color: #777;
+      font-size: 13px;
+    }
+
+    .tracker-info {
+      background: #fafafa;
+      padding: 15px;
+      border-radius: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #444;
+      font-weight: 600;
+    }
+
+    .info-row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Mobile Responsive Overrides */
+    @media (max-width: 768px) {
+      header {
+        padding: 12px 15px;
+      }
+      h1 {
+        font-size: 18px;
+      }
+      .sidebar {
+        top: 10px;
+        left: 10px;
+        width: calc(100% - 20px);
+        max-height: none;
+      }
+      .toggle-icon {
+        display: inline-block;
+      }
+      .collapsible .panel-content {
+        max-height: 0;
+        overflow: hidden;
+      }
+      .collapsible.expanded .panel-content {
+        max-height: calc(100vh - 250px);
+        margin-top: 10px;
+        overflow-y: auto;
+      }
+      .collapsible.expanded .toggle-icon {
+        transform: rotate(180deg);
+      }
+      @keyframes slideUpMobile {
+        from { bottom: -100px; opacity: 0; }
+        to { bottom: 15px; opacity: 1; }
+      }
+      .tracker-panel {
+        bottom: 15px !important;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        transform: none;
+        padding: 15px;
+        animation: slideUpMobile 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+      }
+      .products-list {
+        max-height: 48vh;
+      }
+      .panel {
+        padding: 15px;
+      }
+      .panel h3 {
+        margin-bottom: 0px;
+        cursor: pointer;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Donation Tracker Live Map</h1>
+  </header>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="panel collapsible">
+        <h3 onclick="this.parentElement.classList.toggle('expanded')">📍 My Donation Status <span class="toggle-icon">▼</span></h3>
+        <div class="panel-content">
+          <div class="status-item">
+            <strong>My Location (Pickup Point)</strong>
+            <span class="status-value" id="status"><span style="color:#888;">Fetching accurate location...</span></span>
+          </div>
+          <div class="status-item">
+            <strong>Driver ETA</strong>
+            <span class="status-value" id="eta">N/A <span style="font-size:13px; color:#888; font-weight:400;">(Waiting
+                for driver assignment)</span></span>
+          </div>
+
+          <div class="driver-info-box" id="driver-details">
+            <h4>🚚 Assigned Driver</h4>
+            <div style="font-size: 13px; color: #555;"><strong>Name:</strong> Rahul Sharma</div>
+            <div style="font-size: 13px; color: #555;"><strong>Vehicle:</strong> MH-04-AB-1234</div>
+            <div style="font-size: 13px; color: #555; margin-top:4px;"><strong>Distance:</strong> <span id="dist-away"
+                style="color:var(--primary);font-weight:700;">Calculating...</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel collapsible">
+        <h3 onclick="this.parentElement.classList.toggle('expanded')">📋 My Active Requests <span class="toggle-icon">▼</span></h3>
+        <div class="panel-content">
+          <div class="products-list" id="products-container" style="margin-top:10px;">
+            <div style="text-align:center; padding: 20px; color: #888; font-size: 14px;">
+              Loading your donations...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--The div element for the map -->
+    <div id="map"></div>
+
+    <!-- Waiting Radar Overlay -->
+    <div id="waiting-overlay">
+      <div class="radar">
+        <div class="radar-dot"></div>
+      </div>
+      <h2>Searching for Available Delivery Partners...</h2>
+      <p>Broadcasting your donation request to nearby NGOs.</p>
+    </div>
+
+    <!-- SUCCESS OVERLAY (Google Pay style) -->
+    <div id="success-overlay">
+      <div class="confetti-container" id="confetti-container"></div>
+      <div class="success-circle">
+        <svg class="checkmark-svg" viewBox="0 0 80 80">
+          <path class="checkmark-path" d="M16 40 L34 58 L64 24"/>
+        </svg>
+      </div>
+      <h2 class="success-title">Donation Delivered! 🎉</h2>
+      <p class="success-subtitle">Your generous contribution has been safely delivered to the orphanage. Thank you for making a difference!</p>
+      <div class="success-badge">✅ Order Completed Successfully</div>
+    </div>
+
+    <!-- Floating Tracker Panel -->
+    <div class="tracker-panel collapsible" id="arriving-panel">
+      <div class="tracker-header" onclick="this.parentElement.classList.toggle('expanded')" style="cursor: pointer; margin-bottom: 0;">
+        <h2>Arriving...</h2>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="live-badge"><span class="dot"></span>Live</div>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+
+      <div class="panel-content">
+        <div class="driver-profile" style="margin-top: 15px;">
+          <div class="driver-avatar">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul&backgroundColor=f39c12" alt="Driver">
+          </div>
+          <div class="driver-details">
+            <h3>Rahul Sharma</h3>
+            <p>NGO Delivery Partner 🚚 MH-02-AB-1234</p>
+          </div>
+        </div>
+
+        <div class="tracker-info">
+          <div class="info-row">
+            <span>Driver Status:</span>
+            <span class="highlight">On the Way</span>
+          </div>
+          <div class="info-row">
+            <span>Est. Distance left:</span>
+            <span class="highlight" id="floating-dist">Calculating...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Socket.IO client -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    let map, donorMarker, truckMarker, connectionLine;
+    let myDonations = [];
+    let activePickupId = null; // Track if a driver actively selected us
+    let activeMyDonation = null; // Stash object for phase 2 routing
+    let activePhase = 0; // 0 = waiting, 1 = driver headed to donor, 2 = driver headed to NGO
+    let boundsLimiter = 0; // throttle bounds recalculations
+    const backendUrl = '';
+
+    // Connect to backend Socket.IO for real-time location updates
+    const socket = io(backendUrl);
+
+    // Initialize and add the map
+    function initMap() {
+      const centerPoint = { lat: 28.6139, lng: 77.2090 }; // Default Location
+
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 12,
+        center: centerPoint,
+        mapTypeControlOptions: {
+          position: google.maps.ControlPosition.TOP_RIGHT,
+        },
+        zoomControlOptions: {
+          position: google.maps.ControlPosition.RIGHT_CENTER,
+        },
+        streetViewControlOptions: {
+          position: google.maps.ControlPosition.RIGHT_CENTER,
+        },
+        fullscreenControlOptions: {
+          position: google.maps.ControlPosition.TOP_RIGHT,
+        }
+      });
+
+      // Get donor name from URL to filter requests meant for this specific donor!
+      const urlParams = new URLSearchParams(window.location.search);
+      const donorFilter = urlParams.get('donor');
+
+      // 1. Fetch existing pickups
+      fetch(`${backendUrl}/pickup/all`)
+        .then(response => response.json())
+        .then(pickups => {
+          // If a donor name is provided in the URL, filter out everyone else's requests!
+          if (donorFilter) {
+              pickups = pickups.filter(p => p.donor_name === donorFilter);
+          }
+          myDonations = pickups;
+          renderProducts(pickups);
+        })
+        .catch(error => {
+          console.error('Error fetching donations:', error);
+          document.getElementById("products-container").innerHTML = `<div style="color:red; font-size:13px; text-align:center; padding:10px;">Failed to load data.</div>`;
+        });
+
+      // 2. Listen for the moment the driver specifically clicks OUR donation!
+      socket.on("pickupSelected", (pickupData) => {
+        console.log("==> SOCKET: Received pickupSelected event for ID:", pickupData.id);
+        console.log("My Active Donations list:", myDonations);
+
+        // Check if the pickup the driver selected belongs to us
+        const isMyDonation = myDonations.find(d => String(d.id) === String(pickupData.id));
+        if (isMyDonation) {
+          console.log("SUCCESS! The driver selected exactly MY donation:", isMyDonation);
+          activePickupId = pickupData.id;
+          activeMyDonation = isMyDonation;
+
+          // Fade out waiting radar
+          const overlay = document.getElementById("waiting-overlay");
+          overlay.style.opacity = '0';
+          setTimeout(() => { overlay.style.display = 'none'; }, 500);
+
+          // 1. Show the Driver details panel!
+          document.getElementById("driver-details").style.display = "block";
+          document.getElementById("arriving-panel").style.display = "block";
+
+          // 2. Add visual feedback on the item itself
+          const itemTitle = document.getElementById(`donation-title-${pickupData.id}`);
+          if (itemTitle && !itemTitle.innerHTML.includes('En Route')) {
+            itemTitle.innerHTML += `<div class="truck-badge"><div class="dot"></div> En Route</div>`;
+          }
+
+          // Optional: Play a sound or show browser alert
+          console.log("A driver just selected your donation!", pickupData);
+          
+          activePhase = 1; // Mark phase 1 starts!
+          
+          // --- Prepare Phase 1 Visualization ---
+          if (donorMarker) {
+              const startLat = pickupData.sim_start_lat || (truckMarker ? truckMarker.getPosition().lat() : 19.1136);
+              const startLng = pickupData.sim_start_lng || (truckMarker ? truckMarker.getPosition().lng() : 72.8697);
+              
+              if (!truckMarker) {
+                  truckMarker = new google.maps.Marker({
+                      position: { lat: startLat, lng: startLng },
+                      map: map,
+                      title: "Driver approaching!",
+                      icon: {
+                          url: "https://maps.gstatic.com/mapfiles/ms2/micons/truck.png",
+                          scaledSize: new google.maps.Size(40, 40)
+                      },
+                      zIndex: 1000
+                  });
+              } else {
+                  truckMarker.setPosition({ lat: startLat, lng: startLng });
+              }
+              document.getElementById("dist-away").innerText = "Driver is moving!";
+              document.getElementById("floating-dist").innerText = "Driver is moving!";
+          }
+
+        } else {
+          console.log("FAILED MATCH! The selected ID was", pickupData.id, "but my IDs are:", myDonations.map(d => d.id));
+        }
+      });
+      
+      // Socket Event for Phase 2 (Order Picked Up)!
+      socket.on("orderPickedUp", (data) => {
+        if(activePickupId !== null && String(data.id) === String(activePickupId) && activeMyDonation) {
+            console.log("Phase 2 Triggered: Headed to NGO!", activeMyDonation);
+            activePhase = 2; // Transition phase state!
+            
+            document.getElementById("floating-dist").innerHTML = "Headed to NGO...";
+            document.getElementById("eta").innerHTML = "En Route to NGO";
+            document.querySelector('.tracker-header h2').innerText = "En Route to NGO";
+            document.querySelector('.tracker-header h2').style.color = "var(--primary)";
+            
+            // Re-label sidebar item
+            const itemTitle = document.getElementById("donation-title-" + activePickupId);
+            if(itemTitle) itemTitle.innerHTML = `En Route to ${activeMyDonation.orphanage_name}`;
+            
+            // Draw NGO Marker!
+            new google.maps.Marker({
+                position: { 
+                   lat: parseFloat(activeMyDonation.ngo_lat) || 19.07, 
+                   lng: parseFloat(activeMyDonation.ngo_lng) || 72.87 
+                },
+                map: map,
+                title: activeMyDonation.orphanage_name,
+                icon: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+                zIndex: 900
+            });
+        }
+      });
+      
+      // Socket Event for Successful Drop-off!
+      socket.on("deliveryCompleted", (data) => {
+        if(activePickupId !== null && String(data.id) === String(activePickupId)) {
+            console.log("Phase 3: Delivery Successfully Completed!");
+            activePhase = 3;
+            document.getElementById("dist-away").innerText = "Drop-off Completed!";
+            document.getElementById("floating-dist").innerHTML = "<span style='color:#4CAF50;'>Drop-off Completed!</span>";
+            document.getElementById("eta").innerHTML = "✅ Delivered";
+            
+            const panelHeader = document.querySelector('.tracker-header h2');
+            if (panelHeader) {
+                panelHeader.innerText = "Delivered! 🎉";
+                panelHeader.style.color = "#4CAF50";
+            }
+            
+            // Remove the active request card from sidebar
+            const itemTitle = document.getElementById("donation-title-" + activePickupId);
+            if (itemTitle) itemTitle.closest('.product-card').remove();
+
+            // Show the glorious success overlay!
+            showSuccessOverlay();
+            
+            // Auto hide and return to normal map after 6 seconds
+            setTimeout(() => {
+                const successOverlay = document.getElementById('success-overlay');
+                if (successOverlay) successOverlay.style.display = 'none';
+                
+                document.getElementById('arriving-panel').style.display = 'none';
+                document.getElementById('driver-details').style.display = 'none';
+                
+                if (truckMarker) { truckMarker.setMap(null); truckMarker = null; }
+                if (connectionLine) { connectionLine.setMap(null); connectionLine = null; }
+                activePickupId = null;
+                activePhase = 0;
+            }, 6000);
+        }
+      });
+
+      // 3. LISTEN FOR REAL-TIME SIMULATION DATA FROM DRIVER
+      socket.on("receiveLocation", (data) => {
+        // Did the user refresh their page mid-delivery? Instantly hook back in without the radar overlay!
+        if (!activePickupId && data.pickupId && myDonations) {
+            const isMine = myDonations.find(d => String(d.id) === String(data.pickupId));
+            if (isMine) {
+                console.log("Auto-Recovered Tracking Mode from telemetry ping!");
+                activePickupId = data.pickupId;
+                activeMyDonation = isMine;
+                activePhase = data.phase || 1;
+                
+                // Erase the waiting overlay radar automatically
+                const overlay = document.getElementById("waiting-overlay");
+                if (overlay) {
+                   overlay.style.opacity = '0';
+                   setTimeout(() => { overlay.style.display = 'none'; }, 500);
+                }
+                document.getElementById("driver-details").style.display = "block";
+                document.getElementById("arriving-panel").style.display = "block";
+            }
+        }
+        
+        if (!activePickupId || String(data.pickupId) !== String(activePickupId)) return;
+
+        // Auto-correct phase if we missed the orderPickedUp event (common on mobile)
+        if (data.phase && data.phase === 2 && activePhase === 1) {
+            console.log("Telemetry dictated Phase 2 shift!");
+            activePhase = 2;
+            document.getElementById("floating-dist").innerHTML = "Headed to NGO...";
+            document.getElementById("eta").innerHTML = "En Route to NGO";
+            const header = document.querySelector('.tracker-header h2');
+            if (header) {
+                header.innerText = "En Route to NGO";
+                header.style.color = "var(--primary)";
+            }
+            if (activeMyDonation && activeMyDonation.orphanage_name) {
+                const itemTitle = document.getElementById("donation-title-" + activePickupId);
+                if (itemTitle) itemTitle.innerHTML = `En Route to ${activeMyDonation.orphanage_name}`;
+            }
+        }
+
+        if (data.lat && data.lng) {
+          const driverPos = { lat: parseFloat(data.lat), lng: parseFloat(data.lng) };
+
+          if (!truckMarker) {
+            truckMarker = new google.maps.Marker({
+              position: driverPos,
+              map: map,
+              title: "Driver approaching!",
+              icon: {
+                url: "https://maps.gstatic.com/mapfiles/ms2/micons/truck.png",
+                scaledSize: new google.maps.Size(40, 40)
+              },
+              zIndex: 1000
+            });
+          } else {
+            truckMarker.setPosition(driverPos);
+          }
+
+          // === PHASE 1 VISUALS (Driver -> Donor) ===
+          if (activePhase === 1 && donorMarker) {
+            const myPos = donorMarker.getPosition();
+            if (connectionLine) connectionLine.setMap(null);
+
+            connectionLine = new google.maps.Polyline({
+              path: [myPos, driverPos],
+              geodesic: true,
+              strokeColor: '#FF8c00',
+              strokeOpacity: 0.8,
+              strokeWeight: 4,
+              icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 3 }, offset: '50%' }]
+            });
+            connectionLine.setMap(map);
+            
+            // Reframe map smoothly but prevent stutter by limiting bound fitting
+            boundsLimiter++;
+            if (boundsLimiter % 5 === 0) {
+               const bounds = new google.maps.LatLngBounds();
+               bounds.extend(myPos);
+               bounds.extend(driverPos);
+               map.fitBounds(bounds, { padding: 80 });
+            }
+            
+            // Use haversine or straight-line distance fallback
+            const distKm = (google.maps.geometry.spherical.computeDistanceBetween(driverPos, myPos) / 1000).toFixed(1);
+            
+            if (data.arrived) {
+                document.getElementById("dist-away").innerHTML = "<strong style='color:#4CAF50;'>Driver arrived at location!</strong>";
+                document.getElementById("floating-dist").innerHTML = "<span style='color:#4CAF50; font-weight: bold;'>🎉 Driver Arrived! Waiting for pickup...</span>";
+                document.getElementById("eta").innerHTML = "<strong style='color:#4CAF50;'>At Doorstep</strong>";
+                
+                const panelHeader = document.querySelector('.tracker-header h2');
+                if (panelHeader && !panelHeader.innerText.includes("Arrived")) {
+                    panelHeader.innerHTML = "Driver Arrived! 🚚";
+                    panelHeader.style.color = "#4CAF50";
+                }
+            } else {
+                document.getElementById("dist-away").innerText = `${distKm} km left`;
+                document.getElementById("floating-dist").innerText = `${distKm} km left`;
+            }
+          }
+          // === PHASE 2 VISUALS (Donor -> NGO) ===
+          else if (activePhase === 2 && activeMyDonation) {
+            const ngoPos = new google.maps.LatLng(
+               parseFloat(activeMyDonation.ngo_lat) || 19.07, 
+               parseFloat(activeMyDonation.ngo_lng) || 72.87
+            );
+            
+            if (connectionLine) connectionLine.setMap(null);
+
+            connectionLine = new google.maps.Polyline({
+              path: [driverPos, ngoPos],
+              geodesic: true,
+              strokeColor: '#4CAF50',
+              strokeOpacity: 0.8,
+              strokeWeight: 4,
+              icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 3 }, offset: '50%' }]
+            });
+            connectionLine.setMap(map);
+
+            boundsLimiter++;
+            if (boundsLimiter % 5 === 0) {
+               const bounds = new google.maps.LatLngBounds();
+               bounds.extend(ngoPos);
+               bounds.extend(driverPos);
+               map.fitBounds(bounds, { padding: 80 });
+            }
+            
+            const distKm = (google.maps.geometry.spherical.computeDistanceBetween(driverPos, ngoPos) / 1000).toFixed(1);
+            document.getElementById("dist-away").innerText = `${distKm} km to NGO`;
+            document.getElementById("floating-dist").innerText = `${distKm} km to NGO`;
+          }
+          
+          // Throttled ETA calls to prevent spamming Google Maps
+          if (boundsLimiter % 40 === 0) {
+             let destLat = activePhase === 1 ? donorMarker.getPosition().lat() : parseFloat(activeMyDonation.ngo_lat) || 19.07;
+             let destLng = activePhase === 1 ? donorMarker.getPosition().lng() : parseFloat(activeMyDonation.ngo_lng) || 72.87;
+             fetchETA(`${driverPos.lat},${driverPos.lng}`, `${destLat},${destLng}`);
+          }
+        }
+      });
+
+      // 3. Track DONOR'S Static/Live Location (High Accuracy)
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          (position) => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const userPos = { lat: userLat, lng: userLng };
+
+            document.getElementById("status").innerHTML = `<span class="badge">Live</span> Active at [${userLat.toFixed(4)}, ${userLng.toFixed(4)}]`;
+
+            if (!donorMarker) {
+              donorMarker = new google.maps.Marker({
+                position: userPos,
+                map: map,
+                title: "My Home",
+                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+              });
+              map.panTo(userPos); // strictly focus map on user when found first time
+              map.setZoom(14);
+            } else {
+              donorMarker.setPosition(userPos);
+            }
+
+            // Re-draw line if moving
+            if (connectionLine && connectionLine.connectedMarkerId) {
+              const targetMarker = pickupMarkers[connectionLine.connectedMarkerId];
+              if (targetMarker) {
+                connectionLine.setPath([userPos, targetMarker.getPosition()]);
+              }
+            }
+
+          },
+          (error) => {
+            document.getElementById("status").innerHTML = `<span style="color:red">Error: ${error.message}</span>`;
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 10000
+          }
+        );
+      } else {
+        document.getElementById("status").innerText = "Geolocation not supported.";
+      }
+    }
+
+    function renderProducts(pickups) {
+      const container = document.getElementById("products-container");
+      if (!pickups || pickups.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 20px; color: #888; font-size: 14px;">No active donations found.</div>`;
+        return;
+      }
+
+      let html = '';
+      pickups.forEach(p => {
+        html += `
+              <div class="product-card" onclick="focusOnDonorMap()">
+                <div class="product-title" id="donation-title-${p.id}">
+                  #${p.id} - ${escapeHtml(p.donor_name)}
+                  <!-- The 'En Route' badge will be dynamically injected here when driver selects it -->
+                </div>
+                <div class="product-detail">
+                  🏠 ${escapeHtml(p.donor_address || 'Address not listed')}
+                </div>
+                <div class="product-detail" style="font-weight:600; color:var(--primary);">
+                  🏢 Going To: ${escapeHtml(p.orphanage_name || 'Pending assignment')}
+                </div>
+              </div>
+            `;
+      });
+      container.innerHTML = html;
+    }
+
+    function escapeHtml(unsafe) {
+      if (!unsafe) return "";
+      return unsafe.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function focusOnDonorMap() {
+      if (donorMarker) {
+        map.panTo(donorMarker.getPosition());
+        map.setZoom(15);
+      }
+    }
+
+    // 4. Fetch ETA logically separating ETA UI and Distance UI
+    function fetchETA(origin, destination) {
+      fetch(`${backendUrl}/pickup/eta?origin=${origin}&destination=${destination}`)
+        .then(res => {
+          if (!res.ok && res.status !== 400 && res.status !== 500) {
+            throw new Error("Network error or backend down");
+          }
+          return res.json();
+        })
+        .then(data => {
+          // Google API response might be 200 OK but with "status": "REQUEST_DENIED"
+          if (data.status === "REQUEST_DENIED" || data.status === "OVER_QUERY_LIMIT" || data.error_message) {
+            const errMsg = data.error_message || "API Key issue.";
+            document.getElementById("eta").innerHTML = `<span style="color:red; font-size:13px;">Error: ${errMsg}</span>`;
+            console.error("Google API Error:", errMsg);
+            return;
+          }
+
+          if (data.error) {
+            // Backend threw custom error
+            document.getElementById("eta").innerHTML = `<span style="color:red; font-size:13px;">${data.error}</span>`;
+            return;
+          }
+
+          if (data.rows && data.rows.length > 0 && data.rows[0].elements && data.rows[0].elements.length > 0) {
+            const element = data.rows[0].elements[0];
+            if (element.status === "OK") {
+              const duration = element.duration.text;
+              // ONLY update ETA display — do NOT touch dist-away during animation
+              document.getElementById("eta").innerHTML = `<span class="highlight">${duration}</span> <span style="font-size:14px; color:#666;">Truck is routing..</span>`;
+            } else {
+              document.getElementById("eta").innerHTML = `<span style="color:#d35400;">Route not found (${element.status})</span>`;
+            }
+          } else {
+            document.getElementById("eta").innerHTML = "ETA calculation failed.";
+          }
+        })
+        .catch(err => {
+          // Usually network failure (backend disconnected)
+          console.error("Fetch ETA Error:", err);
+          document.getElementById("eta").innerHTML = `<span style="color:red; font-size:13px;">Backend connection failed</span>`;
+        });
+    }
+    // ============================================
+    // SUCCESS OVERLAY FUNCTION
+    // ============================================
+    function showSuccessOverlay() {
+      const overlay = document.getElementById('success-overlay');
+      // Hide tracker panel and map lines
+      document.getElementById('arriving-panel').style.display = 'none';
+      if (connectionLine) connectionLine.setMap(null);
+      if (truckMarker) truckMarker.setMap(null);
+
+      // Launch confetti
+      const container = document.getElementById('confetti-container');
+      container.innerHTML = '';
+      const colors = ['#4CAF50','#8BC34A','#CDDC39','#FF8c00','#FFB800','#2196F3','#E91E63'];
+      for (let i = 0; i < 60; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'confetti-dot';
+        dot.style.cssText = `
+          left: ${Math.random() * 100}%;
+          background: ${colors[Math.floor(Math.random() * colors.length)]};
+          width: ${6 + Math.random() * 10}px;
+          height: ${6 + Math.random() * 10}px;
+          border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+          animation-duration: ${2 + Math.random() * 3}s;
+          animation-delay: ${Math.random() * 1.5}s;
+        `;
+        container.appendChild(dot);
+      }
+
+      // Show overlay with fade-in
+      overlay.classList.add('show');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { overlay.classList.add('visible'); });
+      });
+
+      // Auto reset after 5s
+      setTimeout(() => {
+        overlay.classList.remove('visible');
+        setTimeout(() => {
+          overlay.classList.remove('show');
+          // Let the 'deliveryCompleted' 6-second global timer handle map cleanup!
+        }, 600);
+      }, 5000);
+    }
+  </script>
+
+  <!-- Load the Google Maps JavaScript API -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3W4Phsr1JeWZMgV68tZlFIKI8QXVbIww&callback=initMap&libraries=places&v=weekly"
+    defer></script>
+</body>
+
+</html>

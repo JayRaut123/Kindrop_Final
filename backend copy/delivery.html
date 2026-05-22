@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Delivery Partner Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <style>
+        :root {
+            --primary: #FF8c00;
+            --secondary: #FFB800;
+            --bg: #fff8f0;
+            --text: #333333;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #FFE0B2 0%, #FFF3E0 100%);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(90deg, #333 0%, #555 100%);
+            color: white;
+            padding: 15px 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .status-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+            width: 100%;
+        }
+
+        .sidebar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 350px;
+            max-width: 90vw;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 5;
+            pointer-events: none;
+            max-height: calc(100vh - 100px);
+        }
+
+        .panel {
+            pointer-events: auto;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 140, 0, 0.3);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toggle-icon {
+            display: none;
+            margin-left: auto;
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+        
+        .collapsible .panel-content {
+            transition: max-height 0.4s ease-in-out;
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .active-target {
+            background: #FFF8E1;
+            border: 2px solid var(--primary);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .active-target p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .active-target strong {
+            color: var(--primary);
+        }
+
+        .eta-box {
+            font-size: 24px;
+            font-weight: 800;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .products-list {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #ccc;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .product-card:hover {
+            border-left-color: var(--primary);
+            transform: translateX(2px);
+        }
+
+        .product-title {
+            font-weight: 700;
+            color: #444;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .product-detail {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* ===== DELIVERY SUCCESS OVERLAY ===== */
+        #delivery-success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        #delivery-success-overlay.show {
+            display: flex;
+        }
+
+        #delivery-success-overlay.visible {
+            opacity: 1;
+        }
+
+        .d-success-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: dSuccessPop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+        }
+
+        @keyframes dSuccessPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .d-check-svg {
+            width: 90px;
+            height: 90px;
+        }
+
+        .d-check-path {
+            stroke: white;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawCheck 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards;
+        }
+
+        @keyframes drawCheck {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .d-success-title {
+            font-size: 30px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin: 0;
+            animation: fadeSlideUp2 0.5s ease 0.9s both;
+        }
+
+        .d-success-sub {
+            font-size: 15px;
+            color: #555;
+            text-align: center;
+            max-width: 380px;
+            line-height: 1.5;
+            margin: 0;
+            animation: fadeSlideUp2 0.5s ease 1.1s both;
+        }
+
+        .d-success-badge {
+            background: #e8f5e9;
+            border: 2px solid #4CAF50;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2e7d32;
+            animation: fadeSlideUp2 0.5s ease 1.3s both;
+        }
+
+        @keyframes fadeSlideUp2 {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .d-confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .d-confetti-dot {
+            position: absolute;
+            animation: confettiFall2 linear forwards;
+        }
+
+        @keyframes confettiFall2 {
+            0% {
+                transform: translateY(-20px) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Mobile Responsive Overrides */
+        @media (max-width: 768px) {
+            header {
+                padding: 12px 15px;
+            }
+            header h1 {
+                font-size: 18px;
+            }
+            .sidebar {
+                top: 10px;
+                left: 10px;
+                width: calc(100% - 20px);
+                /* Let it expand downwards naturally without taking fixed 100vh height */
+                max-height: none; 
+            }
+            .toggle-icon {
+                display: inline-block;
+            }
+            .collapsible .panel-content {
+                max-height: 0;
+                overflow: hidden;
+            }
+            .collapsible.expanded .panel-content {
+                max-height: 50vh;
+                margin-top: 10px;
+            }
+            .collapsible.expanded .toggle-icon {
+                transform: rotate(180deg);
+            }
+            .products-list {
+                max-height: 48vh;
+            }
+            .status-badge {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+            .panel {
+                padding: 15px;
+            }
+            .panel h3 {
+                margin-bottom: 0px; /* Collapsed view shouldn't have margin */
+                cursor: pointer;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Delivery Partner Dashboard</h1>
+        <div class="status-badge">
+            <div class="dot"></div> Broadcasting Live Location
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="panel collapsible">
+                <h3 onclick="this.parentElement.classList.toggle('expanded')">📍 Current Target ETA <span class="toggle-icon">▼</span></h3>
+                <div class="panel-content">
+                    <div id="active-target-info" class="active-target" style="display:none;">
+                        <p><strong>Heading to:</strong> <span id="target-name">...</span></p>
+                        <p><strong>Address:</strong> <span id="target-address">...</span></p>
+                        <div class="eta-box" id="eta-display">Calculating...</div>
+                        <button id="confirm-pickup-btn"
+                            style="background:#4CAF50; display:none; width:100%; margin-top:15px; font-weight: 700; color: white; padding: 10px; border:none; border-radius:8px; cursor: pointer; box-shadow: 0 4px 10px rgba(76,175,80,0.3);"
+                            onclick="confirmPickup()">
+                            ✅ Confirm Order Pickup
+                        </button>
+                    </div>
+                    <div id="no-target-msg" style="font-size: 14px; color: #777; margin-top: 10px;">
+                        Select a pending pickup from the list below to begin routing.
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel collapsible">
+                <h3 onclick="this.parentElement.classList.toggle('expanded')">📋 Pending Pickups <span class="toggle-icon">▼</span></h3>
+                <div class="panel-content">
+                    <div class="products-list" id="products-container" style="margin-top:10px;">
+                        <div style="text-align:center; padding: 20px; color: #888; font-size: 14px;">
+                            Loading pending requests...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--The div element for the map -->
+        <div id="map"></div>
+    </div>
+
+    <!-- DELIVERY SUCCESS OVERLAY: Outside main-container so overflow:hidden does NOT clip it -->
+    <div id="delivery-success-overlay">
+        <div class="d-confetti-container" id="d-confetti-container"></div>
+        <div class="d-success-circle">
+            <svg class="d-check-svg" viewBox="0 0 80 80">
+                <path class="d-check-path" d="M16 40 L34 58 L64 24" />
+            </svg>
+        </div>
+        <h2 class="d-success-title">Delivery Complete! 🎉</h2>
+        <p class="d-success-sub">Great job! The donation has been safely delivered to the NGO. Database record cleared.
+        </p>
+        <div class="d-success-badge">✅ Mission Accomplished</div>
+    </div>
+
+    <!-- Load Socket.IO client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        let map, driverMarker, connectionLine;
+        let pickupMarkers = {};
+        let watchId = null;
+        let activePickupData = null;
+        const backendUrl = ''; // Use relative path so Cloudflare tunnel handles routing automatically
+
+        // =====================================================
+        // GPS_MODE FLAG — Future Real GPS Toggle
+        // When ready for production, set GPS_MODE = 'real'.
+        // In 'real' mode, remove the simulateDriverMovement()
+        // and simulatePhase2Movement() calls and instead rely
+        // SOLELY on the watchPosition() block below to emit
+        // updateLocation to the socket. Also ensure you pass
+        // { pickupId: activePickupData.id, phase: currentPhase }
+        // in every socket.emit("updateLocation") call so the
+        // donor dashboard can correctly associate the telemetry.
+        // =====================================================
+        const GPS_MODE = 'simulation'; // Switch to 'real' for production GPS tracking
+
+        // The driver connects to emit THEIR location
+        const socket = io(backendUrl);
+
+        function initMap() {
+            const centerPoint = { lat: 19.1136, lng: 72.8697 }; // Default Mumbai start
+
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 13,
+                center: centerPoint,
+                mapTypeControl: false,
+                streetViewControl: false,
+            });
+
+            // 1. Fetch pending pickups to show on the driver's map
+            fetchPickups();
+
+            // 2. Track Driver's Live GPS and BROADCAST it to Backend!
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const driverLat = position.coords.latitude;
+                        const driverLng = position.coords.longitude;
+                        const driverPos = { lat: driverLat, lng: driverLng };
+
+                        // Send Driver's real GPS to server so Donors can see it!
+                        // In production (GPS_MODE='real'), this is the ONLY emit needed.
+                        // Include pickupId + phase so donor dashboard can track correctly.
+                        if (GPS_MODE === 'real' && activePickupData) {
+                            socket.emit("updateLocation", { pickupId: activePickupData.id, phase: 1, lat: driverLat, lng: driverLng });
+                        }
+
+                        if (!driverMarker) {
+                            driverMarker = new google.maps.Marker({
+                                position: driverPos,
+                                map: map,
+                                title: "My Truck",
+                                icon: {
+                                    url: "https://maps.gstatic.com/mapfiles/ms2/micons/truck.png",
+                                    scaledSize: new google.maps.Size(40, 40)
+                                },
+                                zIndex: 999
+                            });
+                            map.panTo(driverPos);
+                        } else {
+                            driverMarker.setPosition(driverPos);
+                        }
+
+                        // Recalculate route actively if moving
+                        if (connectionLine && connectionLine.connectedMarkerId) {
+                            const targetMarker = pickupMarkers[connectionLine.connectedMarkerId];
+                            if (targetMarker) {
+                                connectionLine.setPath([driverPos, targetMarker.getPosition()]);
+                            }
+                        }
+
+                    },
+                    (error) => {
+                        console.error("GPS Error:", error);
+                        alert("Please allow GPS access so donors can track you!");
+                    },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                );
+            }
+        }
+
+        // =====================================================
+        // fetchPickups: re-fetches DB and (re-)renders list + markers
+        // Called on load AND instantly after each successful delivery
+        // so the pending list vanishes without any page refresh!
+        // =====================================================
+        function fetchPickups() {
+            fetch(`${backendUrl}/pickup/all`)
+                .then(response => response.json())
+                .then(pickups => {
+                    // Clear old markers from map
+                    Object.values(pickupMarkers).forEach(m => m.setMap(null));
+                    pickupMarkers = {};
+                    renderProducts(pickups);
+                    if (pickups && pickups.length > 0) {
+                        pickups.forEach(pickup => {
+                            const lat = pickup.driver_lat || pickup.donor_lat;
+                            const lng = pickup.driver_lng || pickup.donor_lng;
+                            addDonorMarker(pickup, lat, lng);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching pickups:', error);
+                    document.getElementById("products-container").innerHTML = `<div style="color:red; font-size:13px; text-align:center; padding:10px;">Failed to load server data.</div>`;
+                });
+        }
+
+        function renderProducts(pickups) {
+            const container = document.getElementById("products-container");
+            if (!pickups || pickups.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 20px; color: #888; font-size: 14px;">No pending pickups.</div>`;
+                return;
+            }
+
+            let html = '';
+            pickups.forEach(p => {
+                // Safely encode JSON to avoid quote injection issues in onclick
+                const encodedObj = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
+                html += `
+              <div class="product-card" onclick="selectTarget(${p.id}, '${encodedObj}', true)">
+                <div class="product-title">
+                  #${p.id} - ${escapeHtml(p.donor_name)}
+                </div>
+                <div class="product-detail">📍 ${escapeHtml(p.donor_address)}</div>
+                <div class="product-detail" style="color:var(--primary); font-weight:600; margin-top:4px;">
+                  🏢 Drop at: ${escapeHtml(p.orphanage_name)}
+                </div>
+              </div>
+            `;
+            });
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return "";
+            return unsafe.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        window.selectTarget = function (id, payload, isEncoded) {
+            let p;
+            if (isEncoded) {
+                p = JSON.parse(decodeURIComponent(payload));
+            } else {
+                p = JSON.parse(payload.replace(/&quot;/g, '"'));
+            }
+            activePickupData = p;
+
+            // Update UI Panel
+            document.getElementById('no-target-msg').style.display = 'none';
+            document.getElementById('active-target-info').style.display = 'block';
+            document.getElementById('confirm-pickup-btn').style.display = 'none';
+            document.getElementById('target-name').innerText = p.donor_name;
+            document.getElementById('target-address').innerText = p.donor_address || 'Address not provided';
+            document.getElementById('eta-display').innerText = 'Calculating...';
+
+            const lat = p.driver_lat || p.donor_lat;
+            const lng = p.driver_lng || p.donor_lng;
+
+            // Trigger Map Focus & Gather live GPS
+            const marker = pickupMarkers[id];
+            if (marker && driverMarker) {
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+
+                const currLat = driverMarker.getPosition().lat();
+                const currLng = driverMarker.getPosition().lng();
+
+                // CRITICAL SYNC: Tell donor exactly where we are starting from!
+                p.sim_start_lat = currLat;
+                p.sim_start_lng = currLng;
+                socket.emit("driverAssigned", p);
+
+                const tgtLat = parseFloat(lat);
+                const tgtLng = parseFloat(lng);
+
+                simulateDriverMovement(currLat, currLng, tgtLat, tgtLng, id);
+            } else if (!driverMarker) {
+                // If driver has no GPS yet, still emit assigned but rely on fallback
+                socket.emit("driverAssigned", p);
+                alert("Waiting for your GPS location...");
+            }
+        };
+
+        function addDonorMarker(pickup, lat, lng) {
+            lat = parseFloat(lat); lng = parseFloat(lng);
+            const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map: map,
+                title: pickup.donor_name,
+                icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+            });
+
+            marker.addListener("click", () => {
+                const encodedObj = encodeURIComponent(JSON.stringify(pickup)).replace(/'/g, "%27");
+                selectTarget(pickup.id, encodedObj, true);
+            });
+
+            pickupMarkers[pickup.id] = marker;
+        }
+
+        function drawRoute(targetMarkerId, lat, lng) {
+            if (!driverMarker) return;
+            if (connectionLine) connectionLine.setMap(null);
+
+            const driverPos = driverMarker.getPosition();
+            const targetPos = { lat, lng };
+
+            connectionLine = new google.maps.Polyline({
+                path: [driverPos, targetPos],
+                geodesic: true,
+                strokeColor: '#333',
+                strokeOpacity: 0.8,
+                strokeWeight: 4,
+                icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 3 }, offset: '50%' }]
+            });
+
+            connectionLine.connectedMarkerId = targetMarkerId;
+            connectionLine.setMap(map);
+
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(driverPos);
+            bounds.extend(targetPos);
+            map.fitBounds(bounds, { padding: 60 });
+        }
+
+        function fetchETA(origin, destination) {
+            fetch(`${backendUrl}/pickup/eta?origin=${origin}&destination=${destination}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "REQUEST_DENIED" || data.error_message) {
+                        document.getElementById("eta-display").innerHTML = `<span style="font-size:14px;color:red;">API Key Error</span>`;
+                        return;
+                    }
+                    if (data.rows && data.rows[0].elements[0].status === "OK") {
+                        const element = data.rows[0].elements[0];
+                        document.getElementById("eta-display").innerHTML = `${element.duration.text} <span style="font-size:14px;color:#666;font-weight:400;">(${element.distance.text})</span>`;
+                    } else {
+                        document.getElementById("eta-display").innerHTML = "N/A";
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("eta-display").innerHTML = `<span style="font-size:14px;color:red;">Offline</span>`;
+                });
+        }
+
+        
+        // ANIMATION FUNCTION START
+       
+        let simInterval;
+        function simulateDriverMovement(currLat, currLng, targetLat, targetLng, targetMarkerId) {
+            if (simInterval) clearInterval(simInterval);
+
+            let simSteps = [];
+            const TOTAL_STEPS = 400; // Slower, realistic tracking
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                simSteps.push({
+                    lat: currLat + ((targetLat - currLat) * (i / TOTAL_STEPS)),
+                    lng: currLng + ((targetLng - currLng) * (i / TOTAL_STEPS))
+                });
+            }
+
+            let simIndex = 0;
+            simInterval = setInterval(() => {
+                if (simIndex >= simSteps.length) {
+                    clearInterval(simInterval);
+                    document.getElementById("eta-display").innerHTML = "<strong style='color:#4CAF50'>Driver arrived at location!</strong>";
+                    document.getElementById("confirm-pickup-btn").style.display = "block";
+
+                    // Force donor trigger
+                    const finalPos = simSteps[simSteps.length - 1];
+                    socket.emit("updateLocation", { pickupId: targetMarkerId, phase: 1, lat: finalPos.lat, lng: finalPos.lng, arrived: true });
+                    return;
+                }
+                const pos = simSteps[simIndex];
+
+                // Move truck locally
+                driverMarker.setPosition(pos);
+
+                // Emit high-frequency sync to guarantee Donor matches if they somehow missed Phase 1 start
+                if (simIndex % 5 === 0) {
+                    socket.emit("updateLocation", { pickupId: targetMarkerId, phase: 1, lat: pos.lat, lng: pos.lng });
+                }
+
+                // Redraw the path line closing in 
+                drawRoute(targetMarkerId, targetLat, targetLng);
+
+                // Fetch ETA moderately instead of spamming Google API every frame
+                if (simIndex % 60 === 0) {
+                    fetchETA(`${pos.lat},${pos.lng}`, `${targetLat},${targetLng}`);
+                }
+
+                simIndex++;
+            }, 40); // 40ms interval for realistic smooth movement
+        }
+
+        function confirmPickup() {
+            document.getElementById("confirm-pickup-btn").style.display = "none";
+            socket.emit("orderPickedUp", { id: activePickupData.id });
+
+            document.getElementById('target-address').innerText = "Routing to: " + activePickupData.orphanage_name;
+            document.getElementById('eta-display').innerText = "En Route to NGO...";
+
+
+            const currLat = driverMarker.getPosition().lat();
+            const currLng = driverMarker.getPosition().lng();
+            const tgtLat = parseFloat(activePickupData.ngo_lat) || 19.07;
+            const tgtLng = parseFloat(activePickupData.ngo_lng) || 72.87;
+
+            // Plot Green NGO Marker on map for Delivery screen (Phase 2)
+            new google.maps.Marker({
+                position: { lat: tgtLat, lng: tgtLng },
+                map: map,
+                title: activePickupData.orphanage_name,
+                icon: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+                zIndex: 900
+            });
+
+            simulatePhase2Movement(currLat, currLng, tgtLat, tgtLng, activePickupData.id);
+        }
+
+        function simulatePhase2Movement(currLat, currLng, targetLat, targetLng, targetMarkerId) {
+            if (simInterval) clearInterval(simInterval);
+
+            if (isNaN(targetLat) || targetLat === 0) targetLat = 19.07; // safe fallback (Dharavi NGO area)
+            if (isNaN(targetLng) || targetLng === 0) targetLng = 72.87; // safe fallback
+
+            let simSteps = [];
+            const TOTAL_STEPS = 400; // Slower, realistic tracking
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                simSteps.push({
+                    lat: currLat + ((targetLat - currLat) * (i / TOTAL_STEPS)),
+                    lng: currLng + ((targetLng - currLng) * (i / TOTAL_STEPS))
+                });
+            }
+
+            let simIndex = 0;
+            simInterval = setInterval(() => {
+                if (simIndex >= simSteps.length) {
+                    clearInterval(simInterval);
+                    document.getElementById("eta-display").innerHTML = "<strong style='color:#4CAF50'>Drop-off Completed!</strong>";
+
+                    // CRITICAL TRIGGER: Broadcast to Donor Dashboard to launch Confetti & Success Overlay
+                    socket.emit("deliveryCompleted", { id: targetMarkerId });
+
+                    fetch(`${backendUrl}/pickup/complete/${targetMarkerId}`, { method: 'DELETE' })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log("Database cleared:", data);
+                            showDeliverySuccess();
+                        }).catch(err => {
+                            console.error(err);
+                            showDeliverySuccess(); // Show anyway
+                        });
+
+                    return;
+                }
+                const pos = simSteps[simIndex];
+
+                driverMarker.setPosition(pos);
+                if (simIndex % 5 === 0) {
+                    socket.emit("updateLocation", { pickupId: targetMarkerId, phase: 2, lat: pos.lat, lng: pos.lng });
+                }
+                drawRoute(targetMarkerId, targetLat, targetLng);
+                if (simIndex % 60 === 0) fetchETA(`${pos.lat},${pos.lng}`, `${targetLat},${targetLng}`);
+
+                simIndex++;
+            }, 40);
+        }
+        // ============================================
+        // ANIMATION FUNCTION END 
+        // ============================================
+
+        function showDeliverySuccess() {
+            const overlay = document.getElementById('delivery-success-overlay');
+            if (connectionLine) connectionLine.setMap(null);
+
+            // Instantly remove request from active tracking panel and refresh lists 
+            // so the driver knows it's fundamentally completed without waiting!
+            document.getElementById('active-target-info').style.display = 'none';
+            document.getElementById('no-target-msg').style.display = 'block';
+            activePickupData = null;
+            fetchPickups();
+
+            // Confetti
+            const container = document.getElementById('d-confetti-container');
+            container.innerHTML = '';
+            const colors = ['#4CAF50', '#8BC34A', '#FF8c00', '#FFB800', '#2196F3', '#E91E63', '#9C27B0'];
+            for (let i = 0; i < 60; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'd-confetti-dot';
+                dot.style.cssText = `
+                    left: ${Math.random() * 100}%;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    width: ${6 + Math.random() * 10}px;
+                    height: ${6 + Math.random() * 10}px;
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                    animation-duration: ${2 + Math.random() * 3}s;
+                    animation-delay: ${Math.random() * 1.5}s;
+                `;
+                container.appendChild(dot);
+            }
+
+            overlay.classList.add('show');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => { overlay.classList.add('visible'); });
+            });
+
+            // Reset after 5s
+            setTimeout(() => {
+                overlay.classList.remove('visible');
+                setTimeout(() => {
+                    overlay.classList.remove('show');
+                }, 600);
+            }, 5000);
+        }
+
+    </script>
+
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3W4Phsr1JeWZMgV68tZlFIKI8QXVbIww&callback=initMap&libraries=places&v=weekly"
+        defer></script>
+</body>
+
+</html>

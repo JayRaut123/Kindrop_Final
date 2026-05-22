@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "369670218792",
+    "project_id": "kindrop-d6823",
+    "storage_bucket": "kindrop-d6823.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369670218792:android:8dca305049af192d86811d",
+        "android_client_info": {
+          "package_name": "com.example.kindrop1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "369670218792-foq35ntv9hjl28bkgmrhf35no25tlcku.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.kindrop1",
+            "certificate_hash": "6a4b00b3f68d5239b7daad2bc2f1389df64577b3"
+          }
+        },
+        {
+          "client_id": "369670218792-ds9hrd09ppv7ukgph24ugvk362os05pd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrYova47Kvryeyc2vSZidP2vDhJraCtDk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "369670218792-ds9hrd09ppv7ukgph24ugvk362os05pd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "369670218792-gu1t37180qt2nvb5lceol6tb395tn9hf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.kindrop1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

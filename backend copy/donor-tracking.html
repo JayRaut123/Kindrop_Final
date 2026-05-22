@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your NGO Driver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <style>
+        :root {
+            --primary: #F5A623;
+            --secondary: #F8E71C;
+            --gradient: linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%);
+            --background: #FFFBF2;
+            --text-dark: #333333;
+            --text-light: #777777;
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--gradient);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 4px 15px rgba(245, 166, 35, 0.3);
+            z-index: 10;
+            position: relative;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .main-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Floating Info Panel like Swiggy/Uber at the bottom */
+        .driver-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(237, 143, 3, 0.2);
+            padding: 25px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Dynamic arrival time bar */
+        .arrival-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(245, 166, 35, 0.2);
+            padding-bottom: 12px;
+        }
+
+        .arrival-header h2 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .arrival-header span {
+            background: rgba(245, 166, 35, 0.15);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Driver Details Section */
+        .driver-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .driver-avatar {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(245, 166, 35, 0.3);
+        }
+
+        .driver-details h3 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--text-dark);
+        }
+
+        .driver-details p {
+            margin: 2px 0 0 0;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        /* Distance & ETA Live Tracking Bar */
+        .live-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #FAFAFA;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .live-stats-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .live-stats-val {
+            color: var(--primary);
+        }
+
+        .pulsing-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(245, 166, 35, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(245, 166, 35, 0);
+            }
+        }
+
+        /* Simulating the Driver Movement btn */
+        .test-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 5;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-controls button {
+            background: var(--primary);
+            border: none;
+            padding: 8px 12px;
+            color: white;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Tracker: Your Driver is Arriving Soon</h1>
+    </header>
+
+    <div class="main-container">
+
+        <!-- Demonstration Controls for Teacher! -->
+        <div class="test-controls">
+            <h4 style="margin: 0 0 10px 0; color: #555;">Teacher Demo Panel</h4>
+            <p style="font-size: 12px; margin: 0 0 10px 0;">Simulate the Driver moving towards Borivali</p>
+            <button onclick="simulateDriverMovement()">Simulate Driver Moving 🚚</button>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="driver-panel">
+            <div class="arrival-header">
+                <h2>Arriving...</h2>
+                <span id="eta-badge">
+                    <div class="pulsing-dot"></div> Live
+                </span>
+            </div>
+
+            <div class="driver-info">
+                <div class="driver-avatar">👦🏽</div>
+                <div class="driver-details">
+                    <h3>Rahul Sharma</h3>
+                    <p>NGO Delivery Partner 🚚 MH-02-AB-1234</p>
+                </div>
+            </div>
+
+            <div class="live-stats">
+                <div class="live-stats-row">
+                    <span>Driver Status:</span>
+                    <span class="live-stats-val" id="status-text">On the Way</span>
+                </div>
+                <div class="live-stats-row">
+                    <span>Est. Distance left:</span>
+                    <span class="live-stats-val" id="dist-text">Calculating...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const backendUrl = 'http://localhost:5000';
+        const socket = io(backendUrl);
+
+        let map, donorMarker, truckMarker, polyline;
+
+        // Let's pretend the Donor's Home Location is exactly Borivali (where you checked earlier!)
+        const donorPos = { lat: 19.2307, lng: 72.8567 };
+
+        function initMap() {
+            // High-end map styling
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 14,
+                center: donorPos,
+                disableDefaultUI: true, // cleaner look
+                zoomControl: true,
+            });
+
+            // 1. Plot the Donor's House (Blue Home icon replacing blue dot)
+            donorMarker = new google.maps.Marker({
+                position: donorPos,
+                map: map,
+                title: "My Home",
+                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                // Normally you'd use a Home SVG or similar here!
+            });
+
+            // 2. Initialize the Truck Marker off-screen (waiting for Socket update)
+            truckMarker = new google.maps.Marker({
+                map: map,
+                title: "Driver",
+                icon: {
+                    url: "https://maps.gstatic.com/mapfiles/ms2/micons/truck.png", // Built-in Google Maps Truck Icon
+                    scaledSize: new google.maps.Size(40, 40)
+                }
+            });
+
+            // Initializes connection line
+            polyline = new google.maps.Polyline({
+                map: map,
+                geodesic: true,
+                strokeColor: '#F5A623',
+                strokeOpacity: 1.0,
+                strokeWeight: 5,
+            });
+
+            // Listen to Real Driver Socket Updates from the backend!
+            socket.on("receiveLocation", (data) => {
+                // If a driver broadcasts a location, move the truck!
+                if (data.lat && data.lng) {
+                    const driverPos = { lat: parseFloat(data.lat), lng: parseFloat(data.lng) };
+                    updateTruckLocation(driverPos);
+                }
+            });
+
+            // For Demo: Place Truck initially at Andheri West
+            updateTruckLocation({ lat: 19.1136, lng: 72.8697 });
+        }
+
+        // Moves the truck, redraws line, and fits screen bounds
+        function updateTruckLocation(driverPos) {
+            truckMarker.setPosition(driverPos);
+            polyline.setPath([driverPos, donorPos]);
+
+            // Slowly center the camera to fit both the truck and the house
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(donorPos);
+            bounds.extend(driverPos);
+            map.fitBounds(bounds, { padding: 80 });
+
+            // Fake Distance Calculation just for UI effect (Normally call Google Distance Matrix API like we did on Admin side)
+            document.getElementById("dist-text").innerText = "Approaching via Route...";
+        }
+
+        // ============================================
+        // TEACHER DEMO FUNCTION
+        // ============================================
+        // Because your teacher will want to see the truck physically moving!
+        let simSteps = [];
+        let simIndex = 0;
+        let simInterval;
+        function simulateDriverMovement() {
+            if (simInterval) clearInterval(simInterval);
+
+            // Driver moving from Andheri (19.11) North to Borivali (19.23)
+            let currLat = 19.1136;
+            let currLng = 72.8697;
+            const targetLat = 19.2307;
+            const targetLng = 72.8567;
+
+            // Create 30 steps
+            simSteps = [];
+            for (let i = 1; i <= 30; i++) {
+                simSteps.push({
+                    lat: currLat + ((targetLat - currLat) * (i / 30)),
+                    lng: currLng + ((targetLng - currLng) * (i / 30))
+                });
+            }
+
+            simIndex = 0;
+            document.getElementById("status-text").innerText = "Driver is moving!";
+
+            // Fire fake socket updates to show how the system reacts!
+            simInterval = setInterval(() => {
+                if (simIndex >= simSteps.length) {
+                    clearInterval(simInterval);
+                    document.getElementById("status-text").innerText = "Arrived at your Doorstep!";
+                    document.getElementById("dist-text").innerText = "0.0 km";
+                    return;
+                }
+                const pos = simSteps[simIndex];
+
+                // Technically we just update UI directly here, but in real life
+                // the Driver Phone would emit this coordinate to your Postgres Backend -> Socket Server
+                updateTruckLocation(pos);
+
+                // Give a fake decreasing distance
+                const remainingKm = ((30 - simIndex) * 0.4).toFixed(1);
+                document.getElementById("dist-text").innerText = `${remainingKm} km left`;
+
+                simIndex++;
+            }, 800); // Ticks every 800ms to look like driving
+        }
+
+    </script>
+
+    <!-- Load the Google Maps API -->
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3W4Phsr1JeWZMgV68tZlFIKI8QXVbIww&callback=initMap&libraries=places&v=weekly"
+        defer></script>
+</body>
+
+</html>

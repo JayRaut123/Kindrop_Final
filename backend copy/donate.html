@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make a Donation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #F5A623;
+            --secondary: #F8E71C;
+            --gradient: linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%);
+            --background: #FFFBF2;
+            --text-dark: #333333;
+            --text-light: #777777;
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background);
+            background-image: radial-gradient(circle at 10% 20%, rgba(245, 166, 35, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(248, 231, 28, 0.15) 0%, transparent 40%);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(237, 143, 3, 0.15);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative top bar */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--gradient);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .header h1 {
+            font-weight: 800;
+            font-size: 32px;
+            margin: 0;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-light);
+            font-size: 15px;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            transition: color 0.3s ease;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 2px solid #EEEEEE;
+            background: #FAFAFA;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.1);
+        }
+
+        .form-group.focus label {
+            color: var(--primary);
+        }
+
+        /* Location fetch button inside input*/
+        .location-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .location-btn {
+            position: absolute;
+            right: 12px;
+            background: rgba(245, 166, 35, 0.1);
+            color: var(--primary);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .location-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: var(--gradient);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(245, 166, 35, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(245, 166, 35, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
+        }
+
+        .success-state {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #E8F5E9;
+            color: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 20px;
+        }
+
+        .success-state h2 {
+            font-weight: 800;
+            font-size: 28px;
+            color: var(--text-dark);
+            margin: 0 0 10px 0;
+        }
+
+        .success-state p {
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .track-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #FF6B6B 0%, #E63946 100%);
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .track-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(230, 57, 70, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-msg {
+            color: #E63946;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+            font-weight: 600;
+        }
+
+        /* Map styling for Donor Dashboard */
+        #donor-map {
+            width: 100%;
+            height: 250px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            border: 2px solid #EEEEEE;
+            background: #EAEAEA;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="card" id="form-card">
+            <div class="header">
+                <h1>Give With Purpose</h1>
+                <p>Schedule a quick pickup for your donation. Real-time tracking included.</p>
+            </div>
+            
+            <div id="donor-map"></div>
+
+            <form id="donation-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" class="form-input" id="donor_name" placeholder="E.g., Jay Raut" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Pickup Location</label>
+                    <div class="location-wrapper">
+                        <input type="text" class="form-input" id="donor_address" placeholder="Fetching your location..."
+                            readonly required style="padding-right: 120px;">
+                        <button type="button" class="location-btn" id="locate-btn" onclick="fetchLocation()">Detect
+                            Live</button>
+                    </div>
+                    <div class="error-msg" id="location-error"></div>
+                    <input type="hidden" id="donor_lat">
+                    <input type="hidden" id="donor_lng">
+                    <input type="hidden" id="ngo_lat">
+                    <input type="hidden" id="ngo_lng">
+                </div>
+
+                <div class="form-group">
+                    <label>Orphanage/NGO Destination <span style="font-size: 11px; color:#888; font-weight:400;">(Auto-calculates nearest)</span></label>
+                    <select class="form-input" id="orphanage_name" required onchange="handleNGOSelection()">
+                        <option value="" disabled selected>Please select location first...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>What are you donating?</label>
+                    <input type="text" class="form-input" id="items" placeholder="E.g., 50 Books, 10 Shirts" required>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">
+                    <span id="btn-text">Schedule Pickup</span>
+                    <div class="spinner" id="btn-spinner"></div>
+                </button>
+            </form>
+
+            <div class="success-state" id="success-state">
+                <div class="success-icon">✓</div>
+                <h2>Pickup Scheduled!</h2>
+                <p>Thank you for your generosity. A driver has been assigned and your donation has been logged in our
+                    system.</p>
+                <a href="index.html" id="track-link" class="track-btn">
+                    <span>📍</span> Check Live Location Tracker
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Highlighting label on input focus
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('focus');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('focus');
+            });
+        });
+
+        // Fetch precise browser location immediately on page load
+        window.addEventListener('load', fetchLocation);
+
+        // Data for 9 Local NGOs with approximate Mumbai coordinates
+        const NGOs = [
+            { id: 1, name: "Swagat Ashram Charitable Trust", address: "Malvani Church, Marve Road, Malad West", lat: 19.190, lng: 72.822 },
+            { id: 2, name: "Salaam Baalak Trust", address: "Ganpat Patil Nagar, Borivali West", lat: 19.230, lng: 72.845 },
+            { id: 3, name: "Abhilasha Foundation NGO", address: "Gorai 2, Borivali West", lat: 19.225, lng: 72.835 },
+            { id: 4, name: "Shanti Daan, Missionaries of Charity", address: "L.T. Road, Gorai, Borivali West", lat: 19.226, lng: 72.830 },
+            { id: 5, name: "Bosco Boys' Home", address: "Vazira, Borivali West", lat: 19.2289, lng: 72.8448 },
+            { id: 6, name: "Montfort Children's Home", address: "Uttan Rd, Borivali West", lat: 19.238, lng: 72.840 },
+            { id: 7, name: "Sarvajan Kalyan Trust", address: "Anand Nagar, Dahisar East", lat: 19.2572, lng: 72.8663 },
+            { id: 8, name: "Daya Vihar Ashram", address: "Marve Rd, Malad West", lat: 19.1961, lng: 72.8243 },
+            { id: 9, name: "Spandan Foundation", address: "Sector 1 Charkop, Kandivali West", lat: 19.2076, lng: 72.8293 }
+        ];
+
+        let map, donorMarker, mapConnectionLine;
+        let ngoMarkers = [];
+
+        function initMap() {
+            // Default bounds covering Mumbai Western Suburbs roughly
+            map = new google.maps.Map(document.getElementById("donor-map"), {
+                zoom: 11,
+                center: { lat: 19.215, lng: 72.840 }, 
+                mapTypeControl: false,
+                streetViewControl: false,
+            });
+
+            // Put pins for all 9 NGOs
+            NGOs.forEach(ngo => {
+                const marker = new google.maps.Marker({
+                    position: { lat: ngo.lat, lng: ngo.lng },
+                    map: map,
+                    title: ngo.name,
+                    icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                });
+                ngo.marker = marker;
+                ngoMarkers.push(marker);
+            });
+        }
+
+        // Mathematical calculation to find nearest using GPS coordinates (As the crow flies)
+        function haversineDistance(coords1, coords2) {
+            function toRad(x) { return x * Math.PI / 180; }
+            var lon1 = coords1[1], lat1 = coords1[0], lon2 = coords2[1], lat2 = coords2[0];
+            var R = 6371; // km
+            var x1 = lat2 - lat1, dLat = toRad(x1);
+            var x2 = lon2 - lon1, dLon = toRad(x2);
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function handleNGOSelection() {
+            if (!donorMarker) return; // wait till location fetched
+            const selectElement = document.getElementById('orphanage_name');
+            const selectedName = selectElement.value;
+            if (!selectedName) return;
+            
+            const selectedNGO = NGOs.find(n => n.name === selectedName);
+            
+            // Reset all markers to red
+            NGOs.forEach(ngo => {
+                if(ngo.marker) ngo.marker.setIcon("http://maps.google.com/mapfiles/ms/icons/red-dot.png");
+            });
+            
+            if (selectedNGO && selectedNGO.marker) {
+                // Highlight selected
+                selectedNGO.marker.setIcon("http://maps.google.com/mapfiles/ms/icons/green-dot.png");
+                
+                const userPos = donorMarker.getPosition();
+                
+                // Draw path connecting them
+                if(mapConnectionLine) mapConnectionLine.setMap(null);
+                mapConnectionLine = new google.maps.Polyline({
+                    path: [userPos, { lat: selectedNGO.lat, lng: selectedNGO.lng }],
+                    geodesic: true,
+                    strokeColor: '#FF8c00',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                });
+                mapConnectionLine.setMap(map);
+
+                // Smooth zoom to fit both points
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(userPos);
+                bounds.extend({ lat: selectedNGO.lat, lng: selectedNGO.lng });
+                map.fitBounds(bounds, { padding: 40 });
+                
+                // Store exactly for backend routing to Phase 2
+                document.getElementById('ngo_lat').value = selectedNGO.lat;
+                document.getElementById('ngo_lng').value = selectedNGO.lng;
+            }
+        }
+
+        function fetchLocation() {
+            const btn = document.getElementById('locate-btn');
+            const addressInput = document.getElementById('donor_address');
+            const errDiv = document.getElementById('location-error');
+
+            btn.innerText = "Locating...";
+            errDiv.style.display = "none";
+            addressInput.value = "Fetching GPS coordinates...";
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        document.getElementById('donor_lat').value = lat;
+                        document.getElementById('donor_lng').value = lng;
+
+                        btn.innerText = "Retrying...";
+
+                        // Update Map UI dynamically
+                        const userPos = { lat, lng };
+                        if (!donorMarker) {
+                            donorMarker = new google.maps.Marker({
+                                position: userPos,
+                                map: map,
+                                title: "My Location",
+                                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                                zIndex: 1000
+                            });
+                        } else {
+                            donorMarker.setPosition(userPos);
+                        }
+
+                        // Calculate distances and sort
+                        NGOs.forEach(ngo => {
+                            ngo.distance = haversineDistance([lat, lng], [ngo.lat, ngo.lng]);
+                        });
+                        
+                        NGOs.sort((a, b) => a.distance - b.distance);
+
+                        const selectElement = document.getElementById('orphanage_name');
+                        selectElement.innerHTML = ''; // clear out
+                        
+                        NGOs.forEach((ngo) => {
+                            const option = document.createElement('option');
+                            option.value = ngo.name; 
+                            option.innerText = ngo.name + " (" + ngo.distance.toFixed(1) + "km away)";
+                            selectElement.appendChild(option);
+                        });
+                        
+                        // Select the 1st one (nearest) and trigger highlight
+                        selectElement.value = NGOs[0].name;
+                        selectElement.parentElement.classList.add('focus');
+                        handleNGOSelection(); // triggers line drawing and green marker
+
+                        // Reverse Geocode
+                        try {
+                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                            const data = await res.json();
+                            if (data && data.display_name) {
+                                const parts = data.display_name.split(',');
+                                const shortAddress = parts.slice(0, 3).join(',');
+                                addressInput.value = shortAddress;
+                            } else {
+                                addressInput.value = `📍 Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            }
+                        } catch (e) {
+                            addressInput.value = `📍 Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                        }
+
+                        btn.innerText = "✓ Located";
+                        btn.style.background = "#4CAF50";
+                        btn.style.color = "white";
+                    },
+                    (error) => {
+                        let msg = "Could not fetch location.";
+                        if (error.code === 1) msg = "Location permission denied! Please allow access.";
+                        addressInput.value = "";
+                        errDiv.innerText = msg;
+                        errDiv.style.display = "block";
+                        btn.innerText = "Failed";
+                        btn.style.background = "#FFEbee";
+                        btn.style.color = "red";
+                    },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+                );
+            } else {
+                addressInput.value = "Geolocation not supported.";
+            }
+        }
+
+        // Handle form submission to Real Backend DB
+        document.getElementById('donation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const lat = document.getElementById('donor_lat').value;
+            const lng = document.getElementById('donor_lng').value;
+
+            if (!lat || !lng) {
+                const errDiv = document.getElementById('location-error');
+                errDiv.innerText = "Please wait for GPS location to be detected first!";
+                errDiv.style.display = "block";
+                return;
+            }
+
+            // UI Loading state
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('btn-spinner');
+            const submitBtn = document.getElementById('submit-btn');
+
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            submitBtn.style.pointerEvents = 'none';
+
+            // Prepare payload
+            const urlParams = new URLSearchParams(window.location.search);
+            const fid = urlParams.get('fid');
+
+            const payload = {
+                donor_name: document.getElementById('donor_name').value + ' (' + document.getElementById('items').value + ')',
+                donor_address: document.getElementById('donor_address').value,
+                donor_lat: lat,
+                donor_lng: lng,
+                orphanage_name: document.getElementById('orphanage_name').value,
+                ngo_lat: document.getElementById('ngo_lat').value,
+                ngo_lng: document.getElementById('ngo_lng').value,
+                firebase_id: fid || null
+            };
+
+            try {
+                // Post to our actual Postgres Backend
+                const response = await fetch('/pickup/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    // Show success state
+                    document.getElementById('donation-form').style.display = 'none';
+                    document.querySelector('.header').style.display = 'none';
+                    document.getElementById('success-state').style.display = 'block';
+
+                    // Update Tracker Link with the specific donor name!
+                    document.getElementById('track-link').href = `index.html?donor=${encodeURIComponent(payload.donor_name)}`;
+                } else {
+                    throw new Error("Server error");
+                }
+            } catch (err) {
+                alert("Failed to submit request to database. Make sure backend is running on port 5000.");
+                btnText.style.display = 'block';
+                spinner.style.display = 'none';
+                submitBtn.style.pointerEvents = 'auto';
+            }
+        });
+    </script>
+    
+    <!-- Load the Google Maps JavaScript API -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3W4Phsr1JeWZMgV68tZlFIKI8QXVbIww&callback=initMap&v=weekly"
+      defer></script>
+</body>
+
+</html>
