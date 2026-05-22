@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 void main() async {
-  final apiKey = 'AIzaSyBTnOm_-hzEK-ihX392zl9JQv_WIfS42gY';
+  final apiKey = '_Encrypted_by_Jay_';
   final models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash-lite', 'gemini-2.5-pro'];
   
   for (var model in models) {

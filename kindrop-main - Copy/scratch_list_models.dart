@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 void main() async {
-  final apiKey = 'AIzaSyBTnOm_-hzEK-ihX392zl9JQv_WIfS42gY'; // User's latest key from their edit
+  final apiKey = '_Encrypted_by_Jay'; 
   final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=' + apiKey);
   
   final response = await http.get(url);

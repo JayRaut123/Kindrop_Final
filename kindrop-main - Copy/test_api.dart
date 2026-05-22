@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 void main() async {
-  final apiKey = 'AIzaSyBTnOm_-hzEK-ihX392zl9JQv_WIfS42gY';
+  final apiKey = '_Encrypted_by_Jay_';
   
   final modelsToTest = [
     'gemini-flash-latest',
